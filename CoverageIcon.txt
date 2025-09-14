@@ -10,7 +10,7 @@ Sub LinkCoverageIcon()
 
     ' Path to your Excel file (update with your file path)
     Dim excelFilePath As String
-    excelFilePath = "C:\Users\fara7\Downloads\Ready to git hub\Automate_Report_Powerpoint\Tim_social_links - Tamplate.xlsm"
+    excelFilePath = "C:\Users\farah\Downloads\Ready to git hub\Automate_Report_Powerpoint\Tim_social_links - Tamplate.xlsm"
     ' Open Excel and workbook
     Set excelApp = CreateObject("Excel.Application")
     excelApp.Visible = False
@@ -59,4 +59,5 @@ Sub LinkCoverageIcon()
     Set excelApp = Nothing
    
     MsgBox "Coverage icon linked for all slides!"
+
 End Sub
