@@ -1,0 +1,62 @@
+Sub LinkCoverageIcon()
+    Dim pptSlide As slide
+    Dim shape As shape
+    Dim excelApp As Object
+    Dim excelWorkbook As Object
+    Dim excelSheet As Object
+    Dim slideTitle As String
+    Dim linkURL As String
+    Dim foundCell As Object
+
+    ' Path to your Excel file (update with your file path)
+    Dim excelFilePath As String
+    excelFilePath = "C:\Users\fara7\Downloads\Ready to git hub\Automate_Report_Powerpoint\Tim_social_links - Tamplate.xlsm"
+    ' Open Excel and workbook
+    Set excelApp = CreateObject("Excel.Application")
+    excelApp.Visible = False
+    Set excelWorkbook = excelApp.Workbooks.Open(excelFilePath)
+    Set excelSheet = excelWorkbook.Sheets(1)
+
+    ' Loop through slides
+    For Each pptSlide In ActivePresentation.Slides
+        On Error Resume Next
+       
+        ' Check if the slide has a title placeholder
+        If Not pptSlide.Shapes.Title Is Nothing Then
+            slideTitle = pptSlide.Shapes.Title.TextFrame.TextRange.Text
+           
+            ' Find matching row in Excel
+            Set foundCell = excelSheet.Range("B:B").Find(slideTitle, LookAt:=1)
+           
+            If Not foundCell Is Nothing Then
+                ' Handle the standalone Coverage Link icon
+                For Each shape In pptSlide.Shapes
+                    If shape.Name = "CoverageLink" Then
+                        linkURL = foundCell.Offset(0, 12).Value  ' Column N for Coverage Link
+                       
+                        If linkURL <> "" Then
+                            shape.ActionSettings(ppMouseClick).Hyperlink.Address = linkURL
+                            shape.ActionSettings(ppMouseClick).Hyperlink.TextToDisplay = "CoverageLink"
+                        Else
+                            shape.ActionSettings(ppMouseClick).Hyperlink.Address = ""
+                        End If
+                    End If
+                Next shape
+            Else
+                MsgBox "No matching row found for slide title: " & slideTitle
+            End If
+        Else
+            MsgBox "Slide " & pptSlide.SlideIndex & " doesn't have a title placeholder!"
+        End If
+       
+    Next pptSlide
+
+    ' Clean up
+    excelWorkbook.Close False
+    excelApp.Quit
+    Set excelSheet = Nothing
+    Set excelWorkbook = Nothing
+    Set excelApp = Nothing
+   
+    MsgBox "Coverage icon linked for all slides!"
+End Sub

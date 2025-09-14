@@ -1,0 +1,104 @@
+Sub LinkSocialMediaIcons()
+    Dim pptSlide As slide
+    Dim shape As shape
+    Dim subShape As shape
+    Dim excelApp As Object
+    Dim excelWorkbook As Object
+    Dim excelSheet As Object
+    Dim slideTitle As String
+    Dim linkURL As String
+    Dim iconName As String
+    Dim foundCell As Object
+    Dim allowedIcons As Object
+    Dim i As Integer
+
+    ' Create dictionary for allowed icons
+    Set allowedIcons = CreateObject("Scripting.Dictionary")
+    allowedIcons.Add "InstagramIcon", 1
+    allowedIcons.Add "FacebookIcon", 1
+    allowedIcons.Add "TikTokIcon", 1
+    allowedIcons.Add "SnapchatIcon", 1
+
+    ' Open Excel File
+    Dim excelFilePath As String
+    excelFilePath = "C:\Users\fara7\Downloads\Ready to git hub\Automate_Report_Powerpoint\Tim_social_links - Tamplate.xlsm"
+   
+    Set excelApp = CreateObject("Excel.Application")
+    excelApp.Visible = False
+    Set excelWorkbook = excelApp.Workbooks.Open(excelFilePath)
+    Set excelSheet = excelWorkbook.Sheets(1)
+
+    ' Loop through slides
+    For Each pptSlide In ActivePresentation.Slides
+        On Error Resume Next
+
+        ' Find slide title in Excel
+        If Not pptSlide.Shapes.Title Is Nothing Then
+            slideTitle = pptSlide.Shapes.Title.TextFrame.TextRange.Text
+            Set foundCell = excelSheet.Range("B:B").Find(slideTitle, LookAt:=1)
+
+            ' Process each shape in the slide
+            For Each shape In pptSlide.Shapes
+                If shape.Type = msoGroup Then
+                    ' If shape is a group, check each subShape
+                    For i = shape.GroupItems.Count To 1 Step -1
+                        Set subShape = shape.GroupItems(i)
+                        iconName = subShape.Name
+
+                        If allowedIcons.Exists(iconName) Then
+                            ' Get corresponding link
+                            Select Case iconName
+                                Case "InstagramIcon": linkURL = foundCell.Offset(0, 4).Value ' Column F
+                                Case "FacebookIcon": linkURL = foundCell.Offset(0, 6).Value ' Column H
+                                Case "TikTokIcon": linkURL = foundCell.Offset(0, 8).Value ' Column J
+                                Case "SnapchatIcon": linkURL = foundCell.Offset(0, 10).Value ' Column L
+                            End Select
+
+                            ' Delete icon if link is "No Data"
+                            If linkURL = "No Data" Then
+                                subShape.Delete
+                            ElseIf linkURL <> "" Then
+                                subShape.ActionSettings(ppMouseClick).Hyperlink.Address = linkURL
+                                subShape.ActionSettings(ppMouseClick).Hyperlink.TextToDisplay = "Click to open"
+                            Else
+                                subShape.ActionSettings(ppMouseClick).Hyperlink.Address = ""
+                            End If
+                        End If
+                    Next i
+                Else
+                    ' If shape is not a group, process normally
+                    iconName = shape.Name
+                    If allowedIcons.Exists(iconName) Then
+                        ' Get corresponding link
+                        Select Case iconName
+                            Case "InstagramIcon": linkURL = foundCell.Offset(0, 4).Value ' Column F
+                            Case "FacebookIcon": linkURL = foundCell.Offset(0, 6).Value ' Column H
+                            Case "TikTokIcon": linkURL = foundCell.Offset(0, 8).Value ' Column J
+                            Case "SnapchatIcon": linkURL = foundCell.Offset(0, 10).Value ' Column L
+                        End Select
+
+                        ' Delete icon if link is "No Data"
+                        If linkURL = "No Data" Then
+                            shape.Delete
+                        ElseIf linkURL <> "" Then
+                            shape.ActionSettings(ppMouseClick).Hyperlink.Address = linkURL
+                            shape.ActionSettings(ppMouseClick).Hyperlink.TextToDisplay = "Click to open"
+                        Else
+                            shape.ActionSettings(ppMouseClick).Hyperlink.Address = ""
+                        End If
+                    End If
+                End If
+            Next shape
+        End If
+    Next pptSlide
+
+    ' Cleanup
+    excelWorkbook.Close False
+    excelApp.Quit
+    Set excelSheet = Nothing
+    Set excelWorkbook = Nothing
+    Set excelApp = Nothing
+    Set allowedIcons = Nothing
+
+    MsgBox "Icons linked or removed successfully!"
+End Sub

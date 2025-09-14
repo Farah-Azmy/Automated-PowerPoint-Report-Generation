@@ -1,0 +1,126 @@
+
+Sub GenerateSlides()
+    Dim pptApp As Object
+    Dim pptPres As Object
+    Dim slide10 As Object, slideN As Object
+    Dim shape As Object
+    Dim excelApp As Object
+    Dim wb As Object, ws As Object
+    Dim rowIndex As Integer, lastRow As Integer
+    Dim pptFilePath As String, excelFilePath As String, outputPptPath As String
+    Dim formattedDate As String
+    Dim lastModified As Date
+    Dim i As Integer
+
+    ' Define file paths
+    pptFilePath = "C:\Users\fara7\Downloads\Ready to git hub\Automate_Report_Powerpoint\Orignal Tamp.pptx"
+    outputPptPath = "C:\Users\fara7\Downloads\Ready to git hub\Automate_Report_Powerpoint\generated_presentation_finll.pptm.pptx"
+    excelFilePath = "C:\Users\fara7\Downloads\Ready to git hub\Automate_Report_Powerpoint\Tim_social_links - Tamplate.xlsm"
+
+    ' Check if PowerPoint file exists
+    If Dir(pptFilePath) = "" Then
+        MsgBox "Error: PowerPoint file not found!", vbCritical
+        Exit Sub
+    End If
+
+    ' Get last modified time of Excel file
+    lastModified = FileDateTime(excelFilePath)
+
+    ' Open PowerPoint
+    Set pptApp = CreateObject("PowerPoint.Application")
+    pptApp.Visible = True
+
+    ' Open PowerPoint Template
+    On Error Resume Next
+    Set pptPres = pptApp.Presentations.Open(pptFilePath, , , True)
+    If Err.Number <> 0 Then
+        MsgBox "Error: Could not open PowerPoint file!", vbCritical
+        Exit Sub
+    End If
+    On Error GoTo 0
+
+    ' Check if Slide 10 exists
+    If pptPres.Slides.Count < 10 Then
+        MsgBox "Slide 10 does not exist!", vbCritical
+        Exit Sub
+    End If
+
+    ' Use Slide 10 as the template
+    Set slide10 = pptPres.Slides(10)
+
+    ' Open Excel
+    Set excelApp = CreateObject("Excel.Application")
+    excelApp.Visible = False
+    Set wb = excelApp.Workbooks.Open(excelFilePath)
+    Set ws = wb.Sheets(1)
+
+    ' Find the last row
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(-4162).Row
+
+    ' Loop through each row of data (starting from row 2, skipping headers)
+    For rowIndex = lastRow To 2 Step -1
+        ' Duplicate Slide 10 for the first data row, then continue dynamically
+        Set slideN = slide10.Duplicate(1)
+
+        ' Format the date from column 4 (D)
+        formattedDate = Format(ws.Cells(rowIndex, 4).Value, "yyyy-mm-dd")
+
+        ' Replace placeholders in text boxes
+        For Each shape In slideN.Shapes
+            If shape.HasTextFrame Then
+                If shape.TextFrame.HasText Then
+                    With shape.TextFrame.TextRange
+                        .Text = Replace(.Text, "Zahra", ws.Cells(rowIndex, 1).Value) ' Replace with Name
+                        .Text = Replace(.Text, "zahranishat", ws.Cells(rowIndex, 2).Value) ' Replace with Username
+                        .Text = Replace(.Text, "37,233", Format(ws.Cells(rowIndex, 3).Value, "#,##0")) ' Replace with Follower Count
+                        .Text = Replace(.Text, "Jan 22, 2025", formattedDate) ' Replace with formatted Date
+                    End With
+                End If
+            End If
+        Next shape
+    Next rowIndex
+
+    ' Convert "TextBox 13" into a Title Shape on all slides from Slide 10 onwards
+    On Error Resume Next
+    For i = 10 To pptPres.Slides.Count
+        For Each shape In pptPres.Slides(i).Shapes
+            If shape.Name = "TextBox 13" Then
+                ' Rename "TextBox 13" to "Title"
+                shape.Name = "Title"
+                shape.TextFrame.TextRange.Font.Size = 50
+                shape.TextFrame.TextRange.Font.Bold = msoTrue
+                shape.TextFrame.TextRange.Font.Name = "League Spartan"
+                
+                ' Align it properly
+                shape.TextFrame.TextRange.ParagraphFormat.Alignment = ppAlignCenter
+                shape.TextFrame.AutoSize = ppAutoSizeShapeToFitText
+
+                Exit For
+            End If
+        Next shape
+    Next i
+    On Error GoTo 0 ' Resume normal error handling
+
+    ' Store last modified date in PowerPoint metadata
+    pptPres.BuiltinDocumentProperties("Comments") = "Last Updated: " & lastModified
+
+    ' Delete the original Slide 10 (from template)
+    slide10.Delete
+
+    ' Save and close the PowerPoint file
+    pptPres.SaveAs outputPptPath
+    pptPres.Close
+    pptApp.Quit
+
+    ' Close Excel
+    wb.Close False
+    excelApp.Quit
+
+    MsgBox "Slides generated successfully and will update dynamically: " & outputPptPath, vbInformation
+End Sub
+
+
+
+
+
+

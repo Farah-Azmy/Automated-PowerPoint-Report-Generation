@@ -1,0 +1,114 @@
+Sub ReplaceImagesFromFolders()
+    Dim ppt As Presentation
+    Dim slide As slide
+    Dim shape As shape
+    Dim slideTitle As String
+    Dim folderPath As String
+    Dim imagePath As String
+    Dim imageNames As Variant
+    Dim imageName As Variant
+    Dim imgShape As shape
+    Dim imgShapeName As String
+    Dim originalShapeName As String
+    Dim leftPos As Single, topPos As Single, width As Single, height As Single
+    Dim extList As Variant, ext As Variant
+
+    ' Set the active PowerPoint presentation
+    Set ppt = ActivePresentation
+
+    ' Define the folder path where images are stored (ensure trailing slash is handled)
+    folderPath = "C:\Users\fara7\Downloads\Ready to git hub\Automate_Report_Powerpoint\TIM_Coverage"
+
+    ' Define the images to replace (base names only)
+    imageNames = Array("Image1", "Image2", "Image3")
+
+    ' Define allowed extensions
+    extList = Array(".JPG", ".JPEG", ".PNG")
+
+    ' Loop through each slide in the presentation
+    For Each slide In ppt.Slides
+        ' Get the slide title
+        If slide.Shapes.HasTitle Then
+            slideTitle = Trim(slide.Shapes.Title.TextFrame.TextRange.Text)
+        Else
+            slideTitle = ""
+        End If
+
+        ' Skip slides without a title
+        If slideTitle = "" Then
+            Debug.Print "Skipping slide (no title)"
+            GoTo NextSlide
+        End If
+
+        Debug.Print "Processing Slide: " & slideTitle
+
+        ' Check if the corresponding subfolder exists
+        If Dir(folderPath & "\" & slideTitle, vbDirectory) <> "" Then
+            ' Loop through Image1, Image2, Image3
+            For Each imageName In imageNames
+                imgShapeName = imageName ' Shape name expected in slide
+
+                ' Try to find the shape with that name
+                Set imgShape = Nothing
+                For Each shape In slide.Shapes
+                    If shape.Name = imgShapeName Then
+                        Set imgShape = shape
+                        Exit For
+                    End If
+                Next shape
+
+                ' If shape exists
+                If Not imgShape Is Nothing Then
+                    ' Search for image file in allowed extensions
+                    imagePath = ""
+                    For Each ext In extList
+                        If Dir(folderPath & "\" & slideTitle & "\" & imageName & ext) <> "" Then
+                            imagePath = folderPath & "\" & slideTitle & "\" & imageName & ext
+                            Exit For
+                        End If
+                    Next ext
+
+                    ' If a matching image is found
+                    If imagePath <> "" Then
+                        Debug.Print "Image Found: " & imagePath
+
+                        ' Store position and size
+                        leftPos = imgShape.Left
+                        topPos = imgShape.Top
+                        width = imgShape.width
+                        height = imgShape.height
+                        originalShapeName = imgShape.Name
+
+                        ' Delete the old shape
+                        imgShape.Delete
+                        Set imgShape = Nothing
+
+                        ' Insert new image
+                        Set imgShape = slide.Shapes.AddPicture(imagePath, _
+                            msoFalse, msoCTrue, leftPos, topPos, width, height)
+
+                        ' Rename and bring to front
+                        imgShape.Name = originalShapeName
+                        imgShape.ZOrder msoBringToFront
+
+                        Debug.Print originalShapeName & " replaced successfully."
+                    Else
+                        Debug.Print "Image not found for: " & imageName & " in " & slideTitle
+                        imgShape.Delete
+                        Debug.Print "Deleted shape since no image was available."
+                    End If
+                Else
+                    Debug.Print "Shape not found: " & imgShapeName & " in slide: " & slideTitle
+                End If
+            Next imageName
+        Else
+            Debug.Print "Subfolder not found: " & folderPath & "\" & slideTitle
+        End If
+
+NextSlide:
+    Next slide
+
+    MsgBox "Image replacement completed!", vbInformation
+End Sub
+
+
